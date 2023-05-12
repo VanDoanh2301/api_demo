@@ -9,7 +9,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -22,10 +21,13 @@ public class WareHouseController {
 
 
     //Insert surface
-    @PostMapping("/surfaces")
+    @PostMapping("/insertSurface")
     public ResponseEntity<?> insertSurface(@RequestParam(name = "surface") String surface) {
         if (wareHouseService.existsBySurface(surface)) {
-            return ResponseEntity.badRequest().body("Surface is already exist");
+            return ResponseEntity.ok("Surface is already exist");
+        }
+        if(surface == null) {
+            return ResponseEntity.ok("Please input surface");
         }
         WareHouses wareHouses = new WareHouses();
         wareHouses.setSurface(surface);
@@ -35,11 +37,11 @@ public class WareHouseController {
 
 
     //Get all list warehouse
-    @GetMapping("/surfaces")
+    @GetMapping("/getSurfaces")
     public ResponseEntity<?>  getAllSurface() {
         List<WareHouses> wareHouses = wareHouseService.findAll();
         if(wareHouses == null) {
-            return ResponseEntity.badRequest().body("WareHouse is null");
+            return ResponseEntity.ok("Surface is null");
         }
 
         List<WareHouseDto> wareHouseDtos = new ArrayList<>();
@@ -53,12 +55,12 @@ public class WareHouseController {
     }
 
     //update favorite
-    @PostMapping("/favorites/{id}")
-    public ResponseEntity<?> updateFavorite (@PathVariable(name = "id") Integer id
+    @PostMapping("/updateSurface")
+    public ResponseEntity<?> updateFavorite (@RequestParam(name = "surface_id") Integer id
             ,@RequestParam(name = "favorite", required = false) Integer favorite) {
         WareHouses wareHouses = wareHouseService.findWareHousesById(id);
         if(wareHouses == null) {
-            return ResponseEntity.badRequest().body("WareHouse is null");
+            return ResponseEntity.ok("Surface is null");
         }
         WareHouseDto dto = new WareHouseDto();
         dto.setId(wareHouses.get_id());
@@ -69,5 +71,16 @@ public class WareHouseController {
         wareHouses.setFavorite(favorite);
         wareHouseService.save(wareHouses);
         return ResponseEntity.ok("Update favorite: " + favorite);
+    }
+
+
+    @DeleteMapping("/deleteSurface")
+    public ResponseEntity<?> deleteSurfaceById(@RequestParam(name = "surface_id") Integer id) {
+        WareHouses wareHouses = wareHouseService.findWareHousesById(id);
+        if(wareHouses == null) {
+            return ResponseEntity.ok("Surface is null");
+        }
+        wareHouseService.delete(wareHouses);
+        return ResponseEntity.ok("Delete surface: " + wareHouses.getSurface());
     }
 }
