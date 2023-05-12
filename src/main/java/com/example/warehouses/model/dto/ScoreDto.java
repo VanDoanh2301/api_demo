@@ -19,5 +19,9 @@ public class ScoreDto {
 
     private String date;
 
-    private User user;
+    private String userId;
+
+
+
+
 }

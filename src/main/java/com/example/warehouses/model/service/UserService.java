@@ -80,4 +80,9 @@ public interface UserService {
     boolean existsByEmail(String email);
 
     boolean existsByUserId(String userId);
+
+
+    User findUserId(Integer id);
+
+    User findUserByUserId(String userId);
 }

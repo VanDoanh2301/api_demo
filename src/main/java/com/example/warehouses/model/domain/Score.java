@@ -23,10 +23,8 @@ public class Score {
     @Column(name = "date", length = 125, nullable =false)
     private String date;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JsonIgnoreProperties(value = {"score", "handler","hibernateLazyInitializer"}, allowSetters = true)
-    @JoinColumn(name = "userId")
-    private User user;
+    @Column(name = "userId", length = 125, nullable =false)
+    private String userId;
 
 
 

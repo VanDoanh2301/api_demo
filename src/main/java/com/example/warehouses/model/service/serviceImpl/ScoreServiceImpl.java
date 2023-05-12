@@ -178,4 +178,9 @@ public class ScoreServiceImpl implements ScoreService {
     public <S extends Score, R> R findBy(Example<S> example, Function<FluentQuery.FetchableFluentQuery<S>, R> queryFunction) {
         return scoreRepository.findBy(example, queryFunction);
     }
+
+    @Override
+    public Page<Score> findByDateLike(String day, Pageable pageable) {
+        return scoreRepository.findByDateLike(day, pageable);
+    }
 }

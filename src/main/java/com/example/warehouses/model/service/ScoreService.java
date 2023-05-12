@@ -78,4 +78,6 @@ public  interface   ScoreService {
     <S extends Score> boolean exists(Example<S> example);
 
     <S extends Score, R> R findBy(Example<S> example, Function<FluentQuery.FetchableFluentQuery<S>, R> queryFunction);
+
+    Page<Score> findByDateLike(String day, Pageable pageable);
 }

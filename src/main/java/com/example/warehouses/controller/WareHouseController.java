@@ -1,6 +1,7 @@
 package com.example.warehouses.controller;
 
 import com.example.warehouses.model.domain.WareHouses;
+import com.example.warehouses.model.dto.SurfaceDto;
 import com.example.warehouses.model.dto.WareHouseDto;
 import com.example.warehouses.model.service.WareHouseService;
 import org.apache.coyote.Response;
@@ -22,15 +23,15 @@ public class WareHouseController {
 
     //Insert surface
     @PostMapping("/insertSurface")
-    public ResponseEntity<?> insertSurface(@RequestParam(name = "surface") String surface) {
-        if (wareHouseService.existsBySurface(surface)) {
+    public ResponseEntity<?> insertSurface(@RequestBody SurfaceDto surface) {
+        if (wareHouseService.existsBySurface(surface.getSurface())) {
             return ResponseEntity.ok("Surface is already exist");
         }
         if(surface == null) {
             return ResponseEntity.ok("Please input surface");
         }
         WareHouses wareHouses = new WareHouses();
-        wareHouses.setSurface(surface);
+        wareHouses.setSurface(surface.getSurface());
         wareHouseService.save(wareHouses);
         return ResponseEntity.ok("Save success");
     }
