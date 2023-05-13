@@ -14,8 +14,6 @@ class WarehousesApplicationTests {
 private ScoreRepository scoreRepository;
 	@Test
 	void contextLoads() {
-		List<Score> scores =scoreRepository.findDistinctByMonthLikeOrderByScoreDesc("01");
-		System.out.println(scores);
 
 	}
 

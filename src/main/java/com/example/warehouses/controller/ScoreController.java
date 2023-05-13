@@ -2,6 +2,7 @@ package com.example.warehouses.controller;
 
 import com.example.warehouses.model.domain.Score;
 import com.example.warehouses.model.domain.User;
+import com.example.warehouses.model.dto.ContentDto;
 import com.example.warehouses.model.dto.ScoreDto;
 import com.example.warehouses.model.repository.ScoreRepository;
 import com.example.warehouses.model.service.ScoreService;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.temporal.IsoFields;
 import java.time.temporal.TemporalAdjusters;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -38,26 +40,22 @@ public class ScoreController {
 
     @PostMapping("insertScore")
     private ResponseEntity<?> insertScore(@RequestBody ScoreDto scoreDto) {
-
-        if(StringUtils.isBlank(String.valueOf(scoreDto.getDate()))) {
-            return ResponseEntity.ok("Date is required");
-        }
         if(StringUtils.isBlank(String.valueOf(scoreDto.getUserId()))) {
             return ResponseEntity.ok("User Id is required");
         }
-
         Score score = new Score();
         score.setScore(scoreDto.getScore());
-        score.setDate(scoreDto.getDate());
+        score.setDate(LocalDate.now());
         score.setUserId(scoreDto.getUserId());
         scoreService.save(score);
         return ResponseEntity.ok("Save score");
 
     }
     @GetMapping("getScoreByDay")
-    public ResponseEntity<List<Score>> getTopScoresByDayLike(@RequestParam String day) {
-        List<Score> scores = scoreService.findDistinctByDateLikeOrderByScoreDesc("%" + day);
-
+    public ResponseEntity<?> getTopScoresByDayLike(@RequestParam(name = "userId", required = false) String userId) {
+        LocalDate today = LocalDate.now();
+        int currentDay = today.getDayOfMonth();
+        List<Score> scores = scoreRepository.findByDay(currentDay);
         Map<String, Integer> maxScoreByUserId = new HashMap<>();
         List<Score> filteredScores = new ArrayList<>();
         for (Score score : scores) {
@@ -67,43 +65,47 @@ public class ScoreController {
                 filteredScores.add(score);
             }
         }
-        filteredScores.sort(Comparator.comparing(Score::getScore).reversed());
-        List<Score> topScores = filteredScores.stream()
-                .limit(50)
-                .collect(Collectors.toList());
-        return new ResponseEntity<>(topScores, HttpStatus.OK);
-    }
-    @GetMapping("getIndexUser")
-    public ResponseEntity<?> getScoreIndexForUser( @RequestParam String day,@RequestParam String userId) {
-        List<Score> scores = scoreService.findDistinctByDateLikeOrderByScoreDesc("%" + day);
-        Map<String, Integer> maxScoreByUserId = new HashMap<>();
-        List<Score> filteredScores = new ArrayList<>();
-        for (Score score : scores) {
-            if (!maxScoreByUserId.containsKey(score.getUserId())
-                    || score.getScore() > maxScoreByUserId.get(score.getUserId())) {
-                maxScoreByUserId.put(score.getUserId(), score.getScore());
-                filteredScores.add(score);
-            }
-        }
-        filteredScores.sort(Comparator.comparing(Score::getScore).reversed());
-        List<Score> topScores = filteredScores.stream()
-                .limit(50)
-                .collect(Collectors.toList());
 
-        Score score = topScores.stream()
-                .filter(s -> s.getUserId().equals(userId))
-                .findFirst()
-                .orElse(null);
-        if (score == null) {
-            return ResponseEntity.ok("User is null");
+        filteredScores.sort(Comparator.comparing(Score::getScore).reversed());
+        List<Score> topScores = filteredScores.stream()
+                .limit(50)
+                .collect(Collectors.toList());
+        if (topScores.isEmpty()) {
+            return ResponseEntity.ok("Scores is null");
         }
-        User user = userService.findUserByUserId(score.getUserId());
-        return ResponseEntity.ok("Index user: " + user.getId());
+        List<ContentDto> contentDtos = new ArrayList<>();
+        for(Score s : topScores) {
+            User user = userService.findUserByUserId(s.getUserId());
+            if(user == null) {
+                continue;
+            }
+            ContentDto contentDto = new ContentDto();
+            contentDto.setUserId(s.getUserId());
+            contentDto.setScore(s.getScore());
+            contentDto.setScoreDate(s.getDate());
+            contentDto.setUserName(user.getName());
+            contentDto.setAvatar(user.getAvatar());
+            contentDtos.add(contentDto);
+        }
+        if(userId != null) {
+            Score score = topScores.stream()
+                    .filter(s -> s.getUserId().equals(userId))
+                    .findFirst()
+                    .orElse(null);
+            if (score == null) {
+                return ResponseEntity.ok("User is null");
+            }
+            User user = userService.findUserByUserId(score.getUserId());
+            return ResponseEntity.ok("Index user: "+ user.getId());
+        }
+        return ResponseEntity.ok(contentDtos);
     }
+
     @GetMapping("/getScoreByMonth")
-    public ResponseEntity<List<Score>> getScoresByMonth(@RequestParam String month) {
-        List<Score> scores = scoreRepository.findByDateLikeOrderByScoreDesc("%" + month + "-%");
-
+    public ResponseEntity<?> getScoresByMonth(@RequestParam(name = "userId", required = false) String userId) {
+        LocalDate today = LocalDate.now();
+        int currentMonth= today.getMonthValue();
+        List<Score> scores = scoreRepository.findByMonth(currentMonth);
         Map<String, Integer> maxScoreByUserId = new HashMap<>();
         List<Score> filteredScores = new ArrayList<>();
         for (Score score : scores) {
@@ -118,12 +120,41 @@ public class ScoreController {
         List<Score> topScores = filteredScores.stream()
                 .limit(50)
                 .collect(Collectors.toList());
-        return new ResponseEntity<>(topScores, HttpStatus.OK);
-    }
-    @GetMapping("/getUserByMonth")
-    public ResponseEntity<?> getUserByMonth(@RequestParam String month, @RequestParam String userId) {
-        List<Score> scores = scoreRepository.findByDateLikeOrderByScoreDesc("%" + month + "-%");
+        if (topScores.isEmpty()) {
+            return ResponseEntity.ok("Scores is null");
+        }
+        List<ContentDto> contentDtos = new ArrayList<>();
+        for(Score s : topScores) {
+            User user = userService.findUserByUserId(s.getUserId());
+            ContentDto contentDto = new ContentDto();
+            contentDto.setUserId(s.getUserId());
+            contentDto.setScore(s.getScore());
+            contentDto.setScoreDate(s.getDate());
+            contentDto.setUserName(user.getName());
+            contentDto.setAvatar(user.getAvatar());
+            contentDtos.add(contentDto);
+        }
+        if(userId != null) {
+            Score score = topScores.stream()
+                    .filter(s -> s.getUserId().equals(userId))
+                    .findFirst()
+                    .orElse(null);
+            if (score == null) {
+                return ResponseEntity.ok("User is null");
+            }
+            User user = userService.findUserByUserId(score.getUserId());
+            return ResponseEntity.ok("Index user: "+ user.getId());
+        }
 
+        return ResponseEntity.ok(contentDtos);
+    }
+
+    @GetMapping("/getScoreByWeek")
+    public ResponseEntity<?> getScoresByWeek(@RequestParam(name = "userId", required = false) String userId) {
+        LocalDate today = LocalDate.now();
+        int currentYear = today.getYear();
+        int currentWeek = today.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR);
+        List<Score> scores = scoreRepository.findByWeekNumber(currentWeek, currentYear);
         Map<String, Integer> maxScoreByUserId = new HashMap<>();
         List<Score> filteredScores = new ArrayList<>();
         for (Score score : scores) {
@@ -138,94 +169,33 @@ public class ScoreController {
         List<Score> topScores = filteredScores.stream()
                 .limit(50)
                 .collect(Collectors.toList());
-        Score score = topScores.stream()
-                .filter(s -> s.getUserId().equals(userId))
-                .findFirst()
-                .orElse(null);
-        if (score == null) {
-            return ResponseEntity.ok("User is null");
+        if (topScores.isEmpty()) {
+            return ResponseEntity.ok("Scores is null");
         }
-        User user = userService.findUserByUserId(score.getUserId());
-        return ResponseEntity.ok("Index user: " + user.getId());
-
-    }
-    @GetMapping("getScoreByWeek")
-    public ResponseEntity<List<Score>> getScoresByWeek(
-            @RequestParam int year,
-            @RequestParam int month,
-            @RequestParam int week) {
-
-        LocalDate startDateOfWeek = LocalDate.of(year, month, 1)
-                .with(TemporalAdjusters.firstInMonth(DayOfWeek.MONDAY))
-                .plusWeeks(week - 1);
-        LocalDate endDateOfWeek = startDateOfWeek.plusDays(6);
-
-        // Query the scores for the week
-        List<Score> scores = scoreRepository.findByDateBetween(startDateOfWeek.toString(), endDateOfWeek.toString());
-
-        // Filter the scores by selecting the ones with highest scores for each user
-        Map<String, Score> maxScoresByUserId = new HashMap<>();
-        for (Score score : scores) {
-            String userId = score.getUserId();
-            if (!maxScoresByUserId.containsKey(userId) || score.getScore() > maxScoresByUserId.get(userId).getScore()) {
-                maxScoresByUserId.put(userId, score);
+        List<ContentDto> contentDtos = new ArrayList<>();
+        for(Score s : topScores) {
+            User user = userService.findUserByUserId(s.getUserId());
+            ContentDto contentDto = new ContentDto();
+            contentDto.setUserId(s.getUserId());
+            contentDto.setScore(s.getScore());
+            contentDto.setScoreDate(s.getDate());
+            contentDto.setUserName(user.getName());
+            contentDto.setAvatar(user.getAvatar());
+            contentDtos.add(contentDto);
+        }
+        if(userId != null) {
+            Score score = topScores.stream()
+                    .filter(s -> s.getUserId().equals(userId))
+                    .findFirst()
+                    .orElse(null);
+            if (score == null) {
+                return ResponseEntity.ok("User is null");
             }
+            User user = userService.findUserByUserId(score.getUserId());
+            return ResponseEntity.ok("Index user: "+ user.getId());
         }
 
-        // Sort and limit the top scores
-        List<Score> topScores = maxScoresByUserId.values().stream()
-                .sorted(Comparator.comparing(Score::getScore).reversed())
-                .limit(50)
-                .collect(Collectors.toList());
-
-        return new ResponseEntity<>(topScores, HttpStatus.OK);
+        return ResponseEntity.ok(contentDtos);
     }
-
-    @GetMapping("getUserByWeek")
-    public ResponseEntity<?> getUserByWeek(
-            @RequestParam int year,
-            @RequestParam int month,
-            @RequestParam int week,
-            @RequestParam String userId
-
-    ) {
-
-        LocalDate startDateOfWeek = LocalDate.of(year, month, 1)
-                .with(TemporalAdjusters.firstInMonth(DayOfWeek.MONDAY))
-                .plusWeeks(week - 1);
-        LocalDate endDateOfWeek = startDateOfWeek.plusDays(6);
-
-        List<Score> scores = scoreRepository.findByDateBetween(
-                startDateOfWeek.toString(), endDateOfWeek.toString());
-        Map<String, Integer> maxScoreByUserId = new HashMap<>();
-        List<Score> filteredScores = new ArrayList<>();
-        for (Score score : scores) {
-            if (!maxScoreByUserId.containsKey(score.getUserId())
-                    || score.getScore() > maxScoreByUserId.get(score.getUserId())) {
-                maxScoreByUserId.put(score.getUserId(), score.getScore());
-                filteredScores.add(score);
-            }
-        }
-
-        List<Score> topScores = filteredScores.stream()
-                .sorted(Comparator.comparing(Score::getScore).reversed())
-                .limit(50)
-                .collect(Collectors.toList());
-
-        Score score = topScores.stream()
-                .filter(s -> s.getUserId().equals(userId))
-                .findFirst()
-                .orElse(null);
-        if (score == null) {
-            return ResponseEntity.ok("User is null");
-        }
-
-        User user = userService.findUserByUserId(score.getUserId());
-        return ResponseEntity.ok("Index user: " + user.getId());
-    }
-
-
-
-
 
     }
