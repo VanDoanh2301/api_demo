@@ -183,4 +183,9 @@ public class ScoreServiceImpl implements ScoreService {
     public Page<Score> findByDateLike(String day, Pageable pageable) {
         return scoreRepository.findByDateLike(day, pageable);
     }
+
+    @Override
+    public List<Score> findDistinctByDateLikeOrderByScoreDesc(String day) {
+        return scoreRepository.findDistinctByDateLikeOrderByScoreDesc(day);
+    }
 }
