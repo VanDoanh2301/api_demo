@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "score")
@@ -22,8 +23,8 @@ public class Score {
     @Column(name = "score", length = 125, nullable =false)
     private Integer score;
 
-    @Temporal(TemporalType.DATE)
-    private LocalDate date;
+    @Column(name = "date", nullable = false)
+    private LocalDateTime date;
 
     @Column(name = "userId", length = 125, nullable =false)
     private String userId;

@@ -1,18 +1,20 @@
 package com.example.warehouses.model.dto;
 
+import com.example.warehouses.model.domain.Score;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ContentDto {
-    private Integer score;
-    private LocalDateTime scoreDate;
-    private String userName;
-    private String avatar;
+public class ScoreWrapper {
+    private int index_user;
+    private int score;
+    private  String userId;
+    private LocalDateTime date;
+
+
 }

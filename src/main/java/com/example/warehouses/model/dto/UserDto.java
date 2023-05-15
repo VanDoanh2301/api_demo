@@ -22,6 +22,7 @@ public class UserDto {
 
 
 
+
     public String getUserId() {
         return userId;
     }
@@ -54,4 +55,6 @@ public class UserDto {
     public void setAvatar(String avatar) {
         this.avatar = avatar;
     }
+
+
 }

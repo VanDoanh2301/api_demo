@@ -1,9 +1,9 @@
 package com.example.warehouses.controller;
 
+import com.example.warehouses.model.domain.Content;
 import com.example.warehouses.model.domain.Score;
 import com.example.warehouses.model.domain.User;
-import com.example.warehouses.model.dto.ContentDto;
-import com.example.warehouses.model.dto.ScoreDto;
+import com.example.warehouses.model.dto.*;
 import com.example.warehouses.model.repository.ScoreRepository;
 import com.example.warehouses.model.service.ScoreService;
 import com.example.warehouses.model.service.UserService;
@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.temporal.IsoFields;
 import java.time.temporal.TemporalAdjusters;
 import java.util.*;
@@ -45,7 +46,7 @@ public class ScoreController {
         }
         Score score = new Score();
         score.setScore(scoreDto.getScore());
-        score.setDate(LocalDate.now());
+        score.setDate(LocalDateTime.now());
         score.setUserId(scoreDto.getUserId());
         scoreService.save(score);
         return ResponseEntity.ok("Save score");
@@ -56,49 +57,71 @@ public class ScoreController {
         LocalDate today = LocalDate.now();
         int currentDay = today.getDayOfMonth();
         List<Score> scores = scoreRepository.findByDay(currentDay);
-        Map<String, Integer> maxScoreByUserId = new HashMap<>();
-        List<Score> filteredScores = new ArrayList<>();
+        Map<String, Score> maxScoreByUserId = new HashMap<>();
         for (Score score : scores) {
             if (!maxScoreByUserId.containsKey(score.getUserId())
-                    || score.getScore() > maxScoreByUserId.get(score.getUserId())) {
-                maxScoreByUserId.put(score.getUserId(), score.getScore());
-                filteredScores.add(score);
+                    || score.getScore() > maxScoreByUserId.get(score.getUserId()).getScore()) {
+                maxScoreByUserId.put(score.getUserId(), score);
             }
         }
 
-        filteredScores.sort(Comparator.comparing(Score::getScore).reversed());
-        List<Score> topScores = filteredScores.stream()
-                .limit(50)
-                .collect(Collectors.toList());
-        if (topScores.isEmpty()) {
-            return ResponseEntity.ok("Scores is null");
+        List<ScoreWrapper> scoreWrappers = new ArrayList<>();
+        int i = 0;
+        for (Score score : maxScoreByUserId.values()) {
+            scoreWrappers.add(new ScoreWrapper(++i, score.getScore(), score.getUserId(), score.getDate()));
         }
+        Collections.sort(scoreWrappers, Comparator.comparingInt(ScoreWrapper::getScore).reversed());
+
+        List<ScoreWrapper> topScores = scoreWrappers.subList(0, Math.min(scoreWrappers.size(), 50));
+
+        if (topScores.isEmpty()) {
+            List<ContentDto> c = new ArrayList<>();
+            UserWrapper userList = new UserWrapper(0, c);
+            return ResponseEntity.ok(userList);
+        }
+
         List<ContentDto> contentDtos = new ArrayList<>();
-        for(Score s : topScores) {
+        for(ScoreWrapper s : topScores) {
             User user = userService.findUserByUserId(s.getUserId());
             if(user == null) {
                 continue;
             }
             ContentDto contentDto = new ContentDto();
-            contentDto.setUserId(s.getUserId());
             contentDto.setScore(s.getScore());
             contentDto.setScoreDate(s.getDate());
             contentDto.setUserName(user.getName());
             contentDto.setAvatar(user.getAvatar());
             contentDtos.add(contentDto);
         }
+        UserWrapper scoreView = new UserWrapper(-1, contentDtos);
         if(userId != null) {
-            Score score = topScores.stream()
+            ScoreWrapper score = topScores.stream()
                     .filter(s -> s.getUserId().equals(userId))
                     .findFirst()
                     .orElse(null);
             if (score == null) {
-                return ResponseEntity.ok("User is null");
+                UserWrapper user = new UserWrapper(-1, contentDtos);
+                return ResponseEntity.ok(user);
             }
-            User user = userService.findUserByUserId(score.getUserId());
-            return ResponseEntity.ok("Index user: "+ user.getId());
+            List<Score> scoreList = scoreRepository.findByUserId(score.getUserId());
+            List<ContentDto> con = new ArrayList<>();
+            for(ScoreWrapper s : topScores) {
+                User user = userService.findUserByUserId(s.getUserId());
+                if(user == null) {
+                    continue;
+                }
+                ContentDto contentDto = new ContentDto();
+                contentDto.setScore(s.getScore());
+                contentDto.setScoreDate(s.getDate());
+                contentDto.setUserName(user.getName());
+                contentDto.setAvatar(user.getAvatar());
+                con.add(contentDto);
+            }
+            List<ContentDto> hight = con.subList(0, Math.min(con.size(), 50));
+            UserWrapper userWrapper = new UserWrapper(score.getIndex_user(), hight);
+            return ResponseEntity.ok(userWrapper);
         }
-        return ResponseEntity.ok(contentDtos);
+        return ResponseEntity.ok(scoreView);
     }
 
     @GetMapping("/getScoreByMonth")
@@ -106,47 +129,72 @@ public class ScoreController {
         LocalDate today = LocalDate.now();
         int currentMonth= today.getMonthValue();
         List<Score> scores = scoreRepository.findByMonth(currentMonth);
-        Map<String, Integer> maxScoreByUserId = new HashMap<>();
-        List<Score> filteredScores = new ArrayList<>();
+        Map<String, Score> maxScoreByUserId = new HashMap<>();
         for (Score score : scores) {
             if (!maxScoreByUserId.containsKey(score.getUserId())
-                    || score.getScore() > maxScoreByUserId.get(score.getUserId())) {
-                maxScoreByUserId.put(score.getUserId(), score.getScore());
-                filteredScores.add(score);
+                    || score.getScore() > maxScoreByUserId.get(score.getUserId()).getScore()) {
+                maxScoreByUserId.put(score.getUserId(), score);
             }
         }
 
-        filteredScores.sort(Comparator.comparing(Score::getScore).reversed());
-        List<Score> topScores = filteredScores.stream()
-                .limit(50)
-                .collect(Collectors.toList());
-        if (topScores.isEmpty()) {
-            return ResponseEntity.ok("Scores is null");
+        List<ScoreWrapper> scoreWrappers = new ArrayList<>();
+        int i = 0;
+        for (Score score : maxScoreByUserId.values()) {
+            scoreWrappers.add(new ScoreWrapper(++i, score.getScore(), score.getUserId(), score.getDate()));
         }
+        Collections.sort(scoreWrappers, Comparator.comparingInt(ScoreWrapper::getScore).reversed());
+
+        List<ScoreWrapper> topScores = scoreWrappers.subList(0, Math.min(scoreWrappers.size(), 50));
+
+
+        if (topScores.isEmpty()) {
+            List<ContentDto> c = new ArrayList<>();
+            UserWrapper userList = new UserWrapper(0, c);
+            return ResponseEntity.ok(userList);
+        }
+
         List<ContentDto> contentDtos = new ArrayList<>();
-        for(Score s : topScores) {
+        for(ScoreWrapper s : topScores) {
             User user = userService.findUserByUserId(s.getUserId());
+            if(user == null) {
+                continue;
+            }
             ContentDto contentDto = new ContentDto();
-            contentDto.setUserId(s.getUserId());
             contentDto.setScore(s.getScore());
             contentDto.setScoreDate(s.getDate());
             contentDto.setUserName(user.getName());
             contentDto.setAvatar(user.getAvatar());
             contentDtos.add(contentDto);
         }
+        UserWrapper scoreView = new UserWrapper(-1, contentDtos);
         if(userId != null) {
-            Score score = topScores.stream()
+            ScoreWrapper score = topScores.stream()
                     .filter(s -> s.getUserId().equals(userId))
                     .findFirst()
                     .orElse(null);
             if (score == null) {
-                return ResponseEntity.ok("User is null");
+                UserWrapper user = new UserWrapper(-1, contentDtos);
+                return ResponseEntity.ok(user);
             }
-            User user = userService.findUserByUserId(score.getUserId());
-            return ResponseEntity.ok("Index user: "+ user.getId());
+            List<Score> scoreList = scoreRepository.findByUserId(score.getUserId());
+            List<ContentDto> con = new ArrayList<>();
+            for(ScoreWrapper s : topScores) {
+                User user = userService.findUserByUserId(s.getUserId());
+                if(user == null) {
+                    continue;
+                }
+                ContentDto contentDto = new ContentDto();
+                contentDto.setScore(s.getScore());
+                contentDto.setScoreDate(s.getDate());
+                contentDto.setUserName(user.getName());
+                contentDto.setAvatar(user.getAvatar());
+                con.add(contentDto);
+            }
+            List<ContentDto> hight = con.subList(0, Math.min(con.size(), 50));
+            UserWrapper userWrapper = new UserWrapper(score.getIndex_user(), hight);
+            return ResponseEntity.ok(userWrapper);
         }
-
-        return ResponseEntity.ok(contentDtos);
+        return ResponseEntity.ok(scoreView);
     }
 
     @GetMapping("/getScoreByWeek")
@@ -155,47 +203,70 @@ public class ScoreController {
         int currentYear = today.getYear();
         int currentWeek = today.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR);
         List<Score> scores = scoreRepository.findByWeekNumber(currentWeek, currentYear);
-        Map<String, Integer> maxScoreByUserId = new HashMap<>();
-        List<Score> filteredScores = new ArrayList<>();
+        Map<String, Score> maxScoreByUserId = new HashMap<>();
         for (Score score : scores) {
             if (!maxScoreByUserId.containsKey(score.getUserId())
-                    || score.getScore() > maxScoreByUserId.get(score.getUserId())) {
-                maxScoreByUserId.put(score.getUserId(), score.getScore());
-                filteredScores.add(score);
+                    || score.getScore() > maxScoreByUserId.get(score.getUserId()).getScore()) {
+                maxScoreByUserId.put(score.getUserId(), score);
             }
         }
 
-        filteredScores.sort(Comparator.comparing(Score::getScore).reversed());
-        List<Score> topScores = filteredScores.stream()
-                .limit(50)
-                .collect(Collectors.toList());
-        if (topScores.isEmpty()) {
-            return ResponseEntity.ok("Scores is null");
+        List<ScoreWrapper> scoreWrappers = new ArrayList<>();
+        int i = 0;
+        for (Score score : maxScoreByUserId.values()) {
+            scoreWrappers.add(new ScoreWrapper(++i, score.getScore(), score.getUserId(), score.getDate()));
         }
+        Collections.sort(scoreWrappers, Comparator.comparingInt(ScoreWrapper::getScore).reversed());
+
+        List<ScoreWrapper> topScores = scoreWrappers.subList(0, Math.min(scoreWrappers.size(), 50));
+
+        if (topScores.isEmpty()) {
+            List<ContentDto> c = new ArrayList<>();
+            UserWrapper userList = new UserWrapper(0, c);
+            return ResponseEntity.ok(userList);
+        }
+
         List<ContentDto> contentDtos = new ArrayList<>();
-        for(Score s : topScores) {
+        for(ScoreWrapper s : topScores) {
             User user = userService.findUserByUserId(s.getUserId());
+            if(user == null) {
+                continue;
+            }
             ContentDto contentDto = new ContentDto();
-            contentDto.setUserId(s.getUserId());
             contentDto.setScore(s.getScore());
             contentDto.setScoreDate(s.getDate());
             contentDto.setUserName(user.getName());
             contentDto.setAvatar(user.getAvatar());
             contentDtos.add(contentDto);
         }
+        UserWrapper scoreView = new UserWrapper(-1, contentDtos);
         if(userId != null) {
-            Score score = topScores.stream()
+            ScoreWrapper score = topScores.stream()
                     .filter(s -> s.getUserId().equals(userId))
                     .findFirst()
                     .orElse(null);
             if (score == null) {
-                return ResponseEntity.ok("User is null");
+                UserWrapper user = new UserWrapper(-1, contentDtos);
+                return ResponseEntity.ok(user);
             }
-            User user = userService.findUserByUserId(score.getUserId());
-            return ResponseEntity.ok("Index user: "+ user.getId());
+            List<Score> scoreList = scoreRepository.findByUserId(score.getUserId());
+            List<ContentDto> con = new ArrayList<>();
+            for(ScoreWrapper s : topScores) {
+                User user = userService.findUserByUserId(s.getUserId());
+                if(user == null) {
+                    continue;
+                }
+                ContentDto contentDto = new ContentDto();
+                contentDto.setScore(s.getScore());
+                contentDto.setScoreDate(s.getDate());
+                contentDto.setUserName(user.getName());
+                contentDto.setAvatar(user.getAvatar());
+                con.add(contentDto);
+            }
+            List<ContentDto> hight = con.subList(0, Math.min(con.size(), 50));
+            UserWrapper userWrapper = new UserWrapper(score.getIndex_user(), hight);
+            return ResponseEntity.ok(userWrapper);
         }
-
-        return ResponseEntity.ok(contentDtos);
+        return ResponseEntity.ok(scoreView);
     }
-
     }
