@@ -33,6 +33,8 @@ public class WareHouseDto {
 
     private String timePlay;
 
+    private Integer delete;
+
     public Integer getId() {
         return id;
     }
@@ -71,5 +73,9 @@ public class WareHouseDto {
 
     public void setTimePlay(String timePlay) {
         this.timePlay = timePlay;
+    }
+
+    public void setDelete(Integer delete) {
+        this.delete = delete;
     }
 }

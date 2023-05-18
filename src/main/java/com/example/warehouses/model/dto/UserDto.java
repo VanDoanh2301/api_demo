@@ -16,7 +16,6 @@ public class UserDto {
 
     private String name;
 
-    private String email;
 
     private String avatar;
 
@@ -31,9 +30,6 @@ public class UserDto {
         return name;
     }
 
-    public String getEmail() {
-        return email;
-    }
 
     public String getAvatar() {
         return avatar;
@@ -48,9 +44,6 @@ public class UserDto {
         this.name = name;
     }
 
-    public void setEmail(String email) {
-        this.email = email;
-    }
 
     public void setAvatar(String avatar) {
         this.avatar = avatar;

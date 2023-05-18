@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class WareHouseServiceImpl implements WareHouseService {
@@ -188,4 +189,6 @@ public class WareHouseServiceImpl implements WareHouseService {
     public WareHouses findWareHousesById(Integer id) {
         return wareHousesRepository.findWareHousesById(id);
     }
+
+
 }

@@ -48,4 +48,7 @@ public class WareHouses {
 
     @Column(name = "time_play", length = 125, nullable = true)
     private String timePlay;
+
+    @Column(name = "delete" , length = 10, nullable = true)
+    private Integer delete;
 }

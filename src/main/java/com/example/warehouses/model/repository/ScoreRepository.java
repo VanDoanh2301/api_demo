@@ -23,12 +23,12 @@ public interface ScoreRepository extends JpaRepository<Score, Integer> {
 
     List<Score> findByUserId(String userId);
 
-    @Query("SELECT e FROM Score e WHERE DAY(e.date) = :dd ")
+    @Query("SELECT e FROM Score e WHERE DAY(e.date) = :dd ORDER BY e.score DESC ")
     List<Score> findByDay(@Param("dd") int dd);
-    @Query("SELECT e FROM Score e WHERE MONTH(e.date) = :mm")
+    @Query("SELECT e FROM Score e WHERE MONTH(e.date) = :mm ORDER BY  e.score DESC")
     List<Score> findByMonth(@Param("mm") int mm);
 
-    @Query("SELECT e FROM Score e WHERE WEEK(e.date) = :weekNumber AND YEAR(e.date) = :yearNumber")
+    @Query("SELECT e FROM Score e WHERE WEEK(e.date) = :weekNumber AND YEAR(e.date) = :yearNumber ORDER BY  e.score DESC")
     List<Score> findByWeekNumber(@Param("weekNumber") int weekNumber, @Param("yearNumber") int yearNumber);
 
 }

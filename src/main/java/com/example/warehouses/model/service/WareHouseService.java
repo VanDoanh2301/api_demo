@@ -82,4 +82,5 @@ public interface WareHouseService {
     Boolean existsBySurface(String surface);
 
     WareHouses findWareHousesById(Integer id);
+
 }
