@@ -1,8 +1,12 @@
 package com.example.warehouses.controller;
 
+import com.example.warehouses.model.domain.Delete;
+import com.example.warehouses.model.domain.Favorites;
+import com.example.warehouses.model.domain.Score;
 import com.example.warehouses.model.domain.WareHouses;
-import com.example.warehouses.model.dto.SurfaceDto;
-import com.example.warehouses.model.dto.WareHouseDto;
+import com.example.warehouses.model.dto.*;
+import com.example.warehouses.model.repository.DeleteRepository;
+import com.example.warehouses.model.repository.FavoritesRepository;
 import com.example.warehouses.model.repository.WareHousesRepository;
 import com.example.warehouses.model.service.WareHouseService;
 import org.apache.coyote.Response;
@@ -22,7 +26,60 @@ public class WareHouseController {
     private WareHouseService wareHouseService;
 
     @Autowired
+    private DeleteRepository deleteRepo;
+
+    @Autowired
+    private FavoritesRepository favoritesRepo;
+
+    @Autowired
     private WareHousesRepository wareHousesRepository;
+
+
+
+    @GetMapping("getDataNew")
+    public ResponseEntity<?> getDataNew() {
+        List<Delete> deletes = deleteRepo.findAll();
+        deletes.sort(Comparator.comparingInt(Delete::getId));
+        List<Favorites> favorites = favoritesRepo.findAll();
+        favorites.sort(Comparator.comparingInt(Favorites::getId));
+        List<WareHouses> wareHouses = wareHouseService.findAll();
+        NewData newdata = new NewData();
+        if(wareHouses == null) {
+            return ResponseEntity.ok("Surface is null");
+        }
+        List<FavoritesDto> favoritesDtos= new ArrayList<>();
+        List<DeleteDto> deleteDtos = new ArrayList<>();
+        for (Delete d : deletes) {
+            DeleteDto dto = new DeleteDto();
+            dto.setId(d.getIdWord());
+            deleteDtos.add(dto);
+        }
+        for (Favorites f : favorites) {
+            FavoritesDto dto = new FavoritesDto();
+            dto.setId(f.getIdWord());
+            favoritesDtos.add(dto);
+        }
+
+        List<WareHouseDto> wareHouseDtos = new ArrayList<>();
+        for(WareHouses w : wareHouses) {
+            if(w.getDelete() != null) {
+                if(w.getDelete().equals(2)) {
+                    WareHouseDto dto = new WareHouseDto();
+                    dto.setId(w.get_id());
+                    dto.setSurface(w.getSurface());
+                    wareHouseDtos.add(dto);
+                } }
+        }
+
+        newdata.setFavorites(favoritesDtos);
+        newdata.setNews(wareHouseDtos);
+        newdata.setRemoves(deleteDtos);
+
+        NewDataDto newDataDto = new NewDataDto();
+        newDataDto.setNewData(newdata);
+
+        return ResponseEntity.ok(newDataDto);
+    }
 
 
     //Insert surface
@@ -44,20 +101,42 @@ public class WareHouseController {
 
     //Get all list warehouse
     @GetMapping("/getSurfaces")
-    public ResponseEntity<?>  getAllSurface() {
+    public ResponseEntity<?>  getAllSurface(@RequestParam(value = "delete", required = false) Integer delete) {
         List<WareHouses> wareHouses = wareHouseService.findAll();
         if(wareHouses == null) {
             return ResponseEntity.ok("Surface is null");
         }
 
         List<WareHouseDto> wareHouseDtos = new ArrayList<>();
+        List<WareHouseDto> w1 = new ArrayList<>();
+        List<WareHouseDto> w2 = new ArrayList<>();
         for(WareHouses w : wareHouses) {
             if(w.getDelete() != null) {
             if(w.getDelete().equals(1)) {
             WareHouseDto dto = new WareHouseDto();
             dto.setId(w.get_id());
             dto.setSurface(w.getSurface());
-            wareHouseDtos.add(dto);} }
+            wareHouseDtos.add(dto);
+            w1.add(dto);
+            } }
+        }
+        for(WareHouses w : wareHouses) {
+            if(w.getDelete() != null) {
+                if(w.getDelete().equals(2)) {
+                    WareHouseDto dto = new WareHouseDto();
+                    dto.setId(w.get_id());
+                    dto.setSurface(w.getSurface());
+                    wareHouseDtos.add(dto);
+                    w2.add(dto);
+                    } }
+        }
+        if (delete != null) {
+            if (delete == 1) {
+                return ResponseEntity.ok(w1);
+            }
+            if(delete == 2) {
+                return ResponseEntity.ok(w2);
+            }
         }
         return ResponseEntity.ok(wareHouseDtos);
     }
@@ -105,7 +184,7 @@ public class WareHouseController {
         for (Integer id : ids) {
             WareHouses wareHouses = wareHouseService.findWareHousesById(id);
             if (wareHouses != null) {
-                wareHouses.setDelete(0);
+                wareHouses.setDelete(2);
                 wareHouseService.save(wareHouses);
             }
         }
