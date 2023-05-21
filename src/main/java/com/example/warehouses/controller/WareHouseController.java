@@ -1,5 +1,6 @@
 package com.example.warehouses.controller;
 
+import ch.qos.logback.core.util.DelayStrategy;
 import com.example.warehouses.model.domain.Delete;
 import com.example.warehouses.model.domain.Favorites;
 import com.example.warehouses.model.domain.Score;
@@ -9,6 +10,7 @@ import com.example.warehouses.model.repository.DeleteRepository;
 import com.example.warehouses.model.repository.FavoritesRepository;
 import com.example.warehouses.model.repository.WareHousesRepository;
 import com.example.warehouses.model.service.WareHouseService;
+import jakarta.annotation.PostConstruct;
 import org.apache.coyote.Response;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,42 +35,24 @@ public class WareHouseController {
 
     @Autowired
     private WareHousesRepository wareHousesRepository;
+    private int previousTime = -1;
+    private List<DeleteDto> deleteDtos;
+    private List<FavoritesDto> favoritesDtos;
+    private List<WareHouseDto> wareHouseDtos;
 
 
-
-    @GetMapping("getDataNew")
+    @GetMapping("/getDataNew")
     public ResponseEntity<?> getDataNew() {
-        List<Delete> deletes = deleteRepo.findAll();
-        deletes.sort(Comparator.comparingInt(Delete::getId));
-        List<Favorites> favorites = favoritesRepo.findAll();
-        favorites.sort(Comparator.comparingInt(Favorites::getId));
-        List<WareHouses> wareHouses = wareHouseService.findAll();
-        NewData newdata = new NewData();
-        if(wareHouses == null) {
-            return ResponseEntity.ok("Surface is null");
-        }
-        List<FavoritesDto> favoritesDtos= new ArrayList<>();
-        List<DeleteDto> deleteDtos = new ArrayList<>();
-        for (Delete d : deletes) {
-            DeleteDto dto = new DeleteDto();
-            dto.setId(d.getIdWord());
-            deleteDtos.add(dto);
-        }
-        for (Favorites f : favorites) {
-            FavoritesDto dto = new FavoritesDto();
-            dto.setId(f.getIdWord());
-            favoritesDtos.add(dto);
+        int currentTime = getCurrentTime();
+
+        if (previousTime != currentTime) {
+            getDataFromStorage();
+            previousTime = currentTime;
         }
 
-        List<WareHouseDto> wareHouseDtos = new ArrayList<>();
-        for(WareHouses w : wareHouses) {
-            if(w.getDelete() != null) {
-                if(w.getDelete().equals(2)) {
-                    WareHouseDto dto = new WareHouseDto();
-                    dto.setId(w.get_id());
-                    dto.setSurface(w.getSurface());
-                    wareHouseDtos.add(dto);
-                } }
+        NewData newdata = new NewData();
+        if (wareHouseDtos == null) {
+            return ResponseEntity.ok("Surface is null");
         }
 
         newdata.setFavorites(favoritesDtos);
@@ -79,6 +63,41 @@ public class WareHouseController {
         newDataDto.setNewData(newdata);
 
         return ResponseEntity.ok(newDataDto);
+    }
+
+    private int getCurrentTime() {
+        return (int) (System.currentTimeMillis() / 1000);
+    }
+
+    private void getDataFromStorage() {
+        List<Delete> deletes = deleteRepo.findAll();
+        deletes.sort(Comparator.comparingInt(Delete::getId));
+        deleteDtos = new ArrayList<>();
+        for (Delete d : deletes) {
+            DeleteDto dto = new DeleteDto();
+            dto.setId(d.getIdWord());
+            deleteDtos.add(dto);
+        }
+
+        List<Favorites> favorites = favoritesRepo.findAll();
+        favorites.sort(Comparator.comparingInt(Favorites::getId));
+        favoritesDtos = new ArrayList<>();
+        for (Favorites f : favorites) {
+            FavoritesDto dto = new FavoritesDto();
+            dto.setId(f.getIdWord());
+            favoritesDtos.add(dto);
+        }
+
+        List<WareHouses> wareHouses = wareHouseService.findAll();
+        wareHouseDtos = new ArrayList<>();
+        for (WareHouses w : wareHouses) {
+            if (w.getDelete() != null && w.getDelete().equals(2)) {
+                WareHouseDto dto = new WareHouseDto();
+                dto.setId(w.get_id());
+                dto.setSurface(w.getSurface());
+                wareHouseDtos.add(dto);
+            }
+        }
     }
 
 
@@ -191,6 +210,7 @@ public class WareHouseController {
 
         return ResponseEntity.ok("Delete success");
     }
+
 
 }
 

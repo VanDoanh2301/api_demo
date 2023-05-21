@@ -13,4 +13,15 @@ public interface WareHousesRepository extends JpaRepository<WareHouses, Integer>
     @Query(value = "SELECT * FROM warehouse where _id = ?1", nativeQuery = true)
     public  WareHouses findWareHousesById(Integer id);
 
+    @Query(value = "SELECT u._id AS id, u.surface, u.`delete` FROM warehouse u", nativeQuery = true)
+    public List<WareHouseProjection> findByAllList();
+
+    public interface WareHouseProjection {
+        Integer getId();
+        String getSurface();
+        Integer getDelete();
+    }
+
+
+
 }

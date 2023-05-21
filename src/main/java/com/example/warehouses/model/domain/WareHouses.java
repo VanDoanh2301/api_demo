@@ -21,7 +21,6 @@ import lombok.NoArgsConstructor;
 @Entity
 @Data
 @Table(name = "warehouse")
-@AllArgsConstructor
 @NoArgsConstructor
 public class WareHouses {
     @Id
@@ -51,4 +50,10 @@ public class WareHouses {
 
     @Column(name = "delete" , length = 10, nullable = true)
     private Integer delete;
+
+    public WareHouses(Integer _id, String surface, Integer delete) {
+        this._id = _id;
+        this.surface = surface;
+        this.delete = delete;
+    }
 }

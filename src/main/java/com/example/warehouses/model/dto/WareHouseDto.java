@@ -35,6 +35,12 @@ public class WareHouseDto {
 
     private Integer delete;
 
+    public WareHouseDto(Integer _id, String surface) {
+        this.id = _id;
+        this.surface = surface;
+    }
+
+
     public Integer getId() {
         return id;
     }
