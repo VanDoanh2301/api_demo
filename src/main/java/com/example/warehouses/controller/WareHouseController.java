@@ -18,6 +18,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -43,11 +44,12 @@ public class WareHouseController {
 
     @GetMapping("/getDataNew")
     public ResponseEntity<?> getDataNew() {
-        int currentTime = getCurrentTime();
+        LocalDateTime now = LocalDateTime.now();
+        int currentHour = now.getHour();
 
-        if (previousTime != currentTime) {
+        if (previousTime != currentHour) {
             getDataFromStorage();
-            previousTime = currentTime;
+            previousTime = currentHour;
         }
 
         NewData newdata = new NewData();
@@ -63,10 +65,6 @@ public class WareHouseController {
         newDataDto.setNewData(newdata);
 
         return ResponseEntity.ok(newDataDto);
-    }
-
-    private int getCurrentTime() {
-        return (int) (System.currentTimeMillis() / 1000);
     }
 
     private void getDataFromStorage() {
@@ -99,7 +97,6 @@ public class WareHouseController {
             }
         }
     }
-
 
     //Insert surface
     @PostMapping("/insertSurface")
