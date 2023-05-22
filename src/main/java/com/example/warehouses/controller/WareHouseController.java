@@ -40,6 +40,7 @@ public class WareHouseController {
     private List<DeleteDto> deleteDtos;
     private List<FavoritesDto> favoritesDtos;
     private List<WareHouseDto> wareHouseDtos;
+    private boolean isLoading = false;
 
 
     @GetMapping("/getDataNew")
