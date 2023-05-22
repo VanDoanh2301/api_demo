@@ -47,7 +47,10 @@ public class WareHouseController {
         LocalDateTime now = LocalDateTime.now();
         int currentHour = now.getHour();
 
-        if (previousTime != currentHour) {
+        if (previousTime != currentHour || !isLoading) {
+            deleteDtos = null;
+            favoritesDtos = null;
+            wareHouseDtos = null;
             getDataFromStorage();
             previousTime = currentHour;
         }
@@ -56,7 +59,7 @@ public class WareHouseController {
         if (wareHouseDtos == null) {
             return ResponseEntity.ok("Surface is null");
         }
-
+        isLoading = false;
         newdata.setFavorites(favoritesDtos);
         newdata.setNews(wareHouseDtos);
         newdata.setRemoves(deleteDtos);
@@ -68,6 +71,7 @@ public class WareHouseController {
     }
 
     private void getDataFromStorage() {
+        isLoading = true;
         List<Delete> deletes = deleteRepo.findAll();
         deletes.sort(Comparator.comparingInt(Delete::getId));
         deleteDtos = new ArrayList<>();
@@ -85,6 +89,19 @@ public class WareHouseController {
             dto.setId(f.getIdWord());
             favoritesDtos.add(dto);
         }
+
+        List<WareHouses> wareHouses = wareHouseService.findAll();
+        wareHouseDtos = new ArrayList<>();
+        for (WareHouses w : wareHouses) {
+            if (w.getDelete() != null && w.getDelete().equals(2)) {
+                WareHouseDto dto = new WareHouseDto();
+                dto.setId(w.get_id());
+                dto.setSurface(w.getSurface());
+                wareHouseDtos.add(dto);
+            }
+        }
+        isLoading = false;
+    }
 
         List<WareHouses> wareHouses = wareHouseService.findAll();
         wareHouseDtos = new ArrayList<>();
