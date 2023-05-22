@@ -37,10 +37,10 @@ public class WareHouseController {
     @Autowired
     private WareHousesRepository wareHousesRepository;
     private int previousTime = -1;
+    private boolean isLoading = false;
     private List<DeleteDto> deleteDtos;
     private List<FavoritesDto> favoritesDtos;
     private List<WareHouseDto> wareHouseDtos;
-    private boolean isLoading = false;
 
 
     @GetMapping("/getDataNew")
@@ -48,7 +48,7 @@ public class WareHouseController {
         LocalDateTime now = LocalDateTime.now();
         int currentHour = now.getHour();
 
-        if (previousTime != currentHour || !isLoading) {
+        if (previousTime != currentHour && !isLoading) {
             deleteDtos = null;
             favoritesDtos = null;
             wareHouseDtos = null;
@@ -102,18 +102,6 @@ public class WareHouseController {
             }
         }
         isLoading = false;
-    }
-
-        List<WareHouses> wareHouses = wareHouseService.findAll();
-        wareHouseDtos = new ArrayList<>();
-        for (WareHouses w : wareHouses) {
-            if (w.getDelete() != null && w.getDelete().equals(2)) {
-                WareHouseDto dto = new WareHouseDto();
-                dto.setId(w.get_id());
-                dto.setSurface(w.getSurface());
-                wareHouseDtos.add(dto);
-            }
-        }
     }
 
     //Insert surface
